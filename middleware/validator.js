@@ -1,5 +1,5 @@
 const joi = require("joi");
-
+const logger = require("../logger");
 const uploadUrlSchema = joi.array().items(joi.object({
         url: joi.string().trim().required(),
         description: joi.string().trim().required()
@@ -23,12 +23,14 @@ const validators = {
             let reqBody = JSON.parse(JSON.stringify(req.body));
             let {error, value} = uploadUrlSchema.validate(reqBody,options);
             if(error) {
+                logger.log("error", "error in uploadUrlBody : "+error);
                 return next({status:400,title:error.details[0].message});
             }else{
                 req.reqBody = value;
                 return next();
             }
         } catch (error) {
+            logger.log("error", "catch error in uploadUrlBody : "+error);
             return next(error);
         }
     },
@@ -36,15 +38,15 @@ const validators = {
         try {
             let reqParams = JSON.parse(JSON.stringify(req.query));
             let {error, value} = urlQueryParamsSchema.validate(reqParams,options);
-            console.log("error here is : "+error);
             if(error) {
+                logger.log("error", "error in urlQueryParams : "+error);
                 return next({status:400,title:error.details[0].message});
             }else{
                 req.reqParams = value;
                 return next();
             }
         } catch (error) {
-            console.log("error is :"+error);
+            logger.log("error", "catch error in urlQueryParams : "+error);
             return next(error);
         }
     }

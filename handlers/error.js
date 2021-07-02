@@ -1,6 +1,5 @@
 
 module.exports = function errHandler(err, req, res, next) {
-    console.log("final err : "+JSON.stringify(err));
     var code = err.status || 500;
     var title = err.title || 'some internal error!';
 

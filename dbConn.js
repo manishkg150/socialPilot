@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const logger = require('./logger');
+
 const dbConn = {
     connectToMongo: async (dbUrl) => {
         try {
@@ -8,10 +10,10 @@ const dbConn = {
                 keepAlive: 1,
                 useUnifiedTopology: true
             });
-            console.log("connection established");
+            logger.log("info", "connection established");
             return conn;
         } catch (error) {
-            console.log("error in connection : "+error);
+            logger.log("error", "error in connection : "+error);
             return error;
         }
     }

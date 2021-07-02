@@ -5,6 +5,7 @@ const s3Upload = require('../services/s3Service');
 const dbService = require('../services/database');
 const fileType = require('file-type');
 const moment = require('moment');
+const logger = require('../logger');
 const max_size = 4 * 1024 * 1024;
 
 var fileController = {
@@ -17,6 +18,7 @@ var fileController = {
                 if(isImageUrl(urlObj.url)){
                     let imageRes = await apiRequest.fetchRequest(urlObj);
                     if(imageRes instanceof Error) {
+                        logger.log("error", "error in downloading image : "+imageRes);
                         result.push({description: urlObj.description, status: 'fail', errorMsg: 'Error in downloading : '+urlObj.url});
                     }
                     else if(Buffer.from(imageRes).length > max_size) {
@@ -29,7 +31,7 @@ var fileController = {
                         let type = fileDetails.mime;
                         let s3Res = await s3Upload.putObject(imageRes, key, type);
                         if(s3Res instanceof Error){
-                            console.log(s3Res);
+                            logger.log("error", "error in uploading image to s3 : "+s3Res);
                             result.push({description: urlObj.description, status: 'fail', errorMsg: 'Error in uploading on s3 : '+urlObj.url});
                         }else{
                             let saveObj = {description: urlObj.description, s3url: s3Res.Location, status: 'success'};
@@ -43,12 +45,13 @@ var fileController = {
             });
             let res = await dbService.saveS3Urls(successResult);
             if(res instanceof Error){
+                logger.log("error", "error in saving s3urls to db "+res);
                 return next(res);
             }
             req.res_data = result.concat(successResult);
             return next();
         } catch (error) {
-            console.log(error);
+            logger.log("error", "catch error in upload file "+error);
             return next(error);
         }
     },
@@ -67,6 +70,7 @@ var fileController = {
             }
             let response = await dbService.getS3Urls(filter, page);
             if(response instanceof Error || !response) {
+                logger.log("error", "error in get s3urls from db "+response);
                 return next({status: 500,title:"some error in fetching urls"});
             }
             if(!response.docs || response.docs.length==0) {
@@ -81,7 +85,7 @@ var fileController = {
             };
             return next();
         } catch (error) {
-            console.log(error);
+            logger.log("error", "catch error in getUrls : "+error);
             return next({status: 500, title: 'some error in fetching urls'})
         }
     }
