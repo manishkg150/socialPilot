@@ -4,6 +4,7 @@ const isImageUrl = require('is-image-url');
 const s3Upload = require('../services/s3Service');
 const dbService = require('../services/database');
 const fileType = require('file-type');
+const moment = require('moment');
 const max_size = 4 * 1024 * 1024;
 
 var fileController = {
@@ -15,9 +16,13 @@ var fileController = {
             await parallel.each(urlList, async urlObj => {
                 if(isImageUrl(urlObj.url)){
                     let imageRes = await apiRequest.fetchRequest(urlObj);
-                    if(imageRes instanceof Error){
+                    if(imageRes instanceof Error) {
                         result.push({description: urlObj.description, status: 'fail', errorMsg: 'Error in downloading : '+urlObj.url});
-                    }else{
+                    }
+                    else if(Buffer.from(imageRes).length > max_size) {
+                        result.push({description: urlObj.description, status: 'fail', errorMsg: 'File size is more than 4 MB :'+urlObj.url});
+                    }
+                    else {
                         let id = new Date().getTime();
                         let fileDetails = await fileType.fromBuffer(imageRes);
                         let key = id+'/'+urlObj.description+"."+fileDetails.ext;
@@ -49,15 +54,16 @@ var fileController = {
     },
     geturls: async (req, res, next) => {
         try {
-            let page = (req.query && req.query.page > 0) ? req.query.page : 1;
+            let queryParams = req.reqParams;
+            let page = queryParams.page;
             let filter = {};
-            if(req.query.description) {
+            if(queryParams.description) {
                 filter.description = req.query.description;
             }
-            if(req.query.createdAfter || req.query.createdBefore) {
+            if(queryParams.createdAfter || queryParams.createdBefore) {
                 filter.createdAt = {};
-                req.query.createdAfter ? (filter.createdAt[$gte] = req.query.createdAfter) : '';
-                req.query.createdBefore ? (filter.createdAt[$lt] = req.query.createdBefore) : '';
+                queryParams.createdAfter ? (filter.createdAt["$gte"] = moment(queryParams.createdAfter)) : '';
+                queryParams.createdBefore ? (filter.createdAt["$lt"] = moment(queryParams.createdBefore)) : '';
             }
             let response = await dbService.getS3Urls(filter, page);
             if(response instanceof Error || !response) {

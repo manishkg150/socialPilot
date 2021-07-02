@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const dbConn = {
     connectToMongo: async (dbUrl) => {
         try {
-            console.log("going to connect to db : "+dbUrl);
             let conn = await mongoose.connect(dbUrl, {
                 useNewUrlParser: "true",
                 useFindAndModify: false,

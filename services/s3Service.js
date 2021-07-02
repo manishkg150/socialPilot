@@ -1,11 +1,11 @@
 const config = require('../config');
 const aws = require('aws-sdk');
+const node_env = process.env.NODE_ENV || 'dev';
 var s3;
 
 let s3Upload = {
     putObject: async (body, key, type) => {
         try {
-            let node_env = config.node_env;
             if(!s3) {
                 s3 = await s3Upload.getS3Obj();
                 if(s3 instanceof Error) return s3;
@@ -25,7 +25,6 @@ let s3Upload = {
     },
     getS3Obj: async () => {
         try {
-            let node_env = config.node_env;
             return new aws.S3({accessKeyId: config[node_env].s3.s3AccessKey,secretAccessKey: config[node_env].s3.s3SecretKey});
         } catch (error) {
             return error;
